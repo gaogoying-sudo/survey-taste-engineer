@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>口味工程师经验采集工作台 - survey-collect-v1.1</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #333;
+      background: #f5f7fa;
+    }
+
+    /* 顶部说明区 */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e1e4e8;
+      padding: 32px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
+    }
+
+    .header.collapsed {
+      padding: 12px 40px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .header.collapsed h1 {
+      font-size: 18px;
+      margin-bottom: 0;
+    }
+
+    .header-desc {
+      color: #666;
+      font-size: 14px;
+      max-width: 800px;
+      transition: all 0.3s ease;
+    }
+
+    .header.collapsed .header-desc {
+      display: none;
+    }
+
+    .header-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .header.collapsed .header-info {
+      display: none;
+    }
+
+    .header-progress {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .header.collapsed .header-progress {
+      display: block;
+    }
+
+    .header-progress-bar {
+      height: 6px;
+      background: #e8ecef;
+      border-radius: 3px;
+      overflow: hidden;
+      max-width: 300px;
+    }
+
+    .header-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4a9eff, #0066ff);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* 自动保存状态区 */
+    .auto-save-status {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+
+    .auto-save-status.saving {
+      color: #ff9800;
+    }
+
+    .auto-save-status.saved {
+      color: #4caf50;
+    }
+
+    .auto-save-icon {
+      font-size: 14px;
+    }
+
+    .header-progress-text {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .header-info-item {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border-left: 3px solid #4a9eff;
+    }
+
+    .header-info-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .header-info-value {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    /* 主体布局 */
+    .main-container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+      gap: 24px;
+    }
+
+    /* 左侧导航 */
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 140px;
+      height: fit-content;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e1e4e8;
+      padding: 20px 16px;
+    }
+
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e1e4e8;
+    }
+
+    .nav-list {
+      list-style: none;
+    }
+
+    .nav-item {
+      margin-bottom: 8px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #555;
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: #f0f4ff;
+      color: #4a9eff;
+    }
+
+    .nav-link.active {
+      background: #e8f0ff;
+      color: #4a9eff;
+      font-weight: 500;
+    }
+
+    .nav-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .nav-status.pending {
+      background: #d0d5dd;
+    }
+
+    .nav-status.progress {
+      background: #ffa726;
+    }
+
+    .nav-status.completed {
+      background: #4caf50;
+    }
+
+    .nav-number {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: #f0f4ff;
+      color: #4a9eff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .nav-link.active .nav-number {
+      background: #4a9eff;
+      color: #fff;
+    }
+
+    /* 主填写区 */
+    .content {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e1e4e8;
+      padding: 32px 40px;
+    }
+
+    /* 模块样式 */
+    .module {
+      margin-bottom: 40px;
+      scroll-margin-top: 140px;
+    }
+
+    .module:last-child {
+      margin-bottom: 0;
+    }
+
+    .module-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e1e4e8;
+      margin-bottom: 24px;
+    }
+
+    .module-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #4a9eff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .module-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .module-desc {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+      padding-left: 44px;
+    }
+
+    /* 题目样式 */
+    .question {
+      margin-bottom: 28px;
+      padding: 20px;
+      background: #fafbfc;
+      border-radius: 8px;
+      border: 1px solid #eaeef2;
+    }
+
+    .question:last-child {
+      margin-bottom: 0;
+    }
+
+    .question-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .question-number {
+      font-size: 13px;
+      color: #4a9eff;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .question-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .required-mark {
+      color: #ff4444;
+      margin-left: 4px;
+    }
+
+    /* 选项样式 */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .option:hover {
+      border-color: #4a9eff;
+      background: #f8fbff;
+    }
+
+    .option.selected {
+      border-color: #4a9eff;
+      background: #e8f0ff;
+    }
+
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .option-label {
+      font-size: 14px;
+      color: #333;
+      flex: 1;
+    }
+
+    /* 量表题样式 */
+    .likert-scale {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .likert-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .likert-button {
+      width: 100%;
+      padding: 10px 0;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .likert-button:hover {
+      border-color: #4a9eff;
+      background: #f8fbff;
+    }
+
+    .likert-button.selected {
+      border-color: #4a9eff;
+      background: #4a9eff;
+      color: #fff;
+    }
+
+    .likert-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    /* 输入框样式 */
+    .input-text {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .input-text:focus {
+      outline: none;
+      border-color: #4a9eff;
+      box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+    }
+
+    textarea.input-text {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* 其他选项补充输入框 */
+    .other-input-container {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e1e4e8;
+      display: none;
+    }
+
+    .other-input-container.visible {
+      display: block;
+    }
+
+    .other-input-label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .other-input-required {
+      color: #ff4444;
+      margin-left: 4px;
+    }
+
+    /* 底部操作区 */
+    .footer {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      border-top: 1px solid #e1e4e8;
+      padding: 20px 40px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .progress-section {
+      flex: 1;
+    }
+
+    .footer-save-status {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .footer-save-status.saving {
+      color: #ff9800;
+    }
+
+    .footer-save-status.saved {
+      color: #4caf50;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: #e8ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4a9eff, #0066ff);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-secondary {
+      background: #f0f4ff;
+      color: #4a9eff;
+      border: 1px solid #4a9eff;
+    }
+
+    .btn-secondary:hover {
+      background: #e0eaff;
+    }
+
+    .btn-auxiliary {
+      background: #fff;
+      color: #666;
+      border: 1px solid #ddd;
+      font-size: 13px;
+      padding: 10px 16px;
+    }
+
+    .btn-auxiliary:hover {
+      background: #f5f5f5;
+      border-color: #ccc;
+    }
+
+    .btn-primary {
+      background: #4a9eff;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #3a8eef;
+    }
+
+    .btn-success {
+      background: #4caf50;
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      background: #43a047;
+    }
+
+    /* 提示信息 */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #333;
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #4caf50;
+    }
+
+    .toast.error {
+      background: #ff4444;
+    }
+
+    /* 模块完成标识 */
+    .module-complete-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 12px;
+    }
+
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: static;
+      }
+
+      .header {
+        padding: 24px 20px;
+      }
+
+      .content {
+        padding: 24px 20px;
+      }
+
+      .footer {
+        padding: 16px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部说明区 -->
+  <header class="header">
+    <h1>口味工程师经验采集工作台</h1>
+    <div class="header-desc" style="color: #666; font-size: 14px; max-width: 800px;">
+      本调研用于系统梳理口味工程师在客户需求理解、菜品可交付性判断、目标出品识别、设备执行映射、试菜调优方法等方面的经验与判断逻辑，为 AI 菜谱生态建设提供知识底座。
+    </div>
+    <div class="header-info">
+      <div class="header-info-item">
+        <div class="header-info-label">面向对象</div>
+        <div class="header-info-value">口味工程师 / 录菜工程师 / 一线交付人员</div>
+      </div>
+      <div class="header-info-item">
+        <div class="header-info-label">预计时间</div>
+        <div class="header-info-value">15-20 分钟（完整版）</div>
+      </div>
+      <div class="header-info-item">
+        <div class="header-info-label">填写方式</div>
+        <div class="header-info-value">选择题优先，少量简答</div>
+      </div>
+      <div class="header-info-item">
+        <div class="header-info-label">数据用途</div>
+        <div class="header-info-value">AI 菜谱生态知识底座建设</div>
+      </div>
+    </div>
+    <div class="header-progress">
+      <div class="auto-save-status saved" id="headerSaveStatus">
+        <span class="auto-save-icon">✓</span>
+        <span id="headerSaveStatusText">已自动保存</span>
+      </div>
+      <div class="header-progress-text">
+        <span>填写进度</span>
+        <span id="headerProgressPercent">0%</span>
+      </div>
+      <div class="header-progress-bar">
+        <div class="header-progress-fill" id="headerProgressFill" style="width: 0%"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体内容 -->
+  <div class="main-container">
+    <!-- 左侧导航 -->
+    <aside class="sidebar">
+      <div class="sidebar-title">调研模块导航</div>
+      <ul class="nav-list" id="navList">
+        <!-- 导航项由 JS 动态生成 -->
+      </ul>
+    </aside>
+
+    <!-- 主填写区 -->
+    <main class="content" id="content">
+      <!-- 模块由 JS 动态生成 -->
+    </main>
+  </div>
+
+  <!-- 底部操作区 -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="progress-section">
+        <div class="footer-save-status saved" id="footerSaveStatus">
+          <span class="auto-save-icon">✓</span>
+          <span id="footerSaveStatusText">已自动保存</span>
+        </div>
+        <div class="progress-label">
+          <span>整体进度</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-auxiliary" onclick="saveDataManual()">💾 立即保存备份</button>
+        <button class="btn btn-secondary" onclick="exportData()">📤 导出 JSON</button>
+        <button class="btn btn-success" onclick="validateAndComplete()">✅ 完成填写并导出</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 提示框 -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ==================== 调研数据定义 ====================
+    const surveyData = [
+      {
+        id: 'm01',
+        title: '调研对象基本信息',
+        desc: '了解您的基本背景和服务经验',
+        questions: [
+          { id: 'q1_1', type: 'text', required: true, label: '你的姓名' },
+          {
+            id: 'q1_2', type: 'radio', required: true, label: '当前岗位',
+            options: ['口味工程师'],
+            hasOther: false
+          },
+          {
+            id: 'q1_3a', type: 'radio', required: true, label: '从事厨师相关工作的年限',
+            options: ['0~1 年', '1~3 年', '3~5 年', '5~8 年', '8 年以上'],
+            hasOther: false
+          },
+          {
+            id: 'q1_3b', type: 'radio', required: true, label: '入职不停科技后从事口味/录菜相关工作的年限',
+            options: ['0~1 年', '1~3 年', '3~5 年', '5~8 年', '8 年以上'],
+            hasOther: false
+          },
+          {
+            id: 'q1_4', type: 'checkbox', required: true, label: '你累计服务过的客户类型',
+            options: ['连锁中餐品牌', '地方菜品牌', '快餐品牌', '团餐客户', '海外客户', '单店客户', '研发型试点客户', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q1_5', type: 'checkbox', required: true, label: '你主要熟悉的菜系',
+            options: ['湘菜', '川菜', '粤菜', '江浙菜', '东北菜', '江西菜', '湖北菜', '韩餐', '日式中餐', '东南亚风味', '综合融合菜', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q1_6', type: 'checkbox', required: true, label: '你主要服务过的区域',
+            options: ['华南', '华中', '华东', '华北', '西南', '西北', '港澳台', '日本', '韩国', '东南亚', '北美', '欧洲国家', '其他'],
+            hasOther: true
+          }
+        ]
+      },
+      {
+        id: 'm02',
+        title: '客户需求获取方式',
+        desc: '了解客户如何表达菜品要求',
+        questions: [
+          {
+            id: 'q2_1', type: 'checkbox', required: true, label: '你在现场最常见到的客户需求输入方式是？',
+            options: ['客户口头描述', '客户现场人工炒样菜', '客户提供文字 SOP', '客户提供配方表', '客户直接要求复刻某道已有菜', '客户只说大概口味方向', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q2_2', type: 'radio', required: true, label: '大部分客户对目标出品的表达清晰度如何？',
+            options: ['非常清晰', '比较清晰', '一般', '比较模糊', '非常模糊'],
+            hasOther: false
+          },
+          {
+            id: 'q2_3', type: 'checkbox', required: true, label: '客户在试菜之后最常评价或最常提出修改的内容是什么？',
+            options: ['咸淡', '辣度', '麻度', '颜色', '锅气', '香气', '嫩度', '断生程度', '汤汁多少', '挂汁状态', '外观亮泽', '分量比例', '上菜效率', '一致性', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q2_6', type: 'checkbox', required: true, label: '客户验收标准最常由谁提出？',
+            options: ['厨师长', '出品负责人', '行政总厨', '研发总厨', '老板', '区域负责人', '门店店长', '多人共同决定', '不固定', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q2_7', type: 'radio', required: true, 
+            label: '你认为客户对菜品要求最常见的表达方式是？（味道语言：如"咸一点、辣一点"；厨师工艺语言：如"大火快炒、小火慢炖"；外观结果语言：如"颜色红亮、汤汁浓稠"）',
+            options: ['更偏"味道语言"', '更偏"厨师工艺语言"', '更偏"外观结果语言"', '三者都有', '不固定'],
+            hasOther: false
+          },
+          {
+            id: 'q2_8', type: 'checkbox', required: true, label: '你最希望客户额外提供哪些信息，能明显提高录菜效率？',
+            options: ['标准样菜', '文字版 SOP', '验收人清单', '验收重点', '是否允许改工艺', '其他'],
+            hasOther: true
+          }
+        ]
+      },
+      {
+        id: 'm03',
+        title: '菜品可交付性判断',
+        desc: '了解如何判断一道菜能否用设备制作',
+        questions: [
+          {
+            id: 'q3_1', type: 'radio', required: true, label: '你一般会在什么阶段判断"这道菜能做/难做/做不了"？',
+            options: ['客户一描述我就能大致判断', '看完客户样菜后才能判断', '上机试一次后才能判断', '试两三次后才能判断', '很难提前判断'],
+            hasOther: false
+          },
+          {
+            id: 'q3_2', type: 'checkbox', required: true, label: '你觉得一道菜"做不了"最常见的原因有哪些？',
+            options: ['需要飞水或走油等前置步骤', '需要中途取出再回锅', '锅容易粘', '升温速度不够', '降温速度不够', '设备搅拌方式不适合', '投料精度不够', '食材状态太不稳定', '客户不允许改工艺', '效率太低客户不接受', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q3_3', type: 'radio', required: true, label: '对你来说，"做不了"和"能做但不建议做"是否需要区分？',
+            options: ['非常需要区分', '需要区分', '一般', '不太需要', '不需要'],
+            hasOther: false
+          },
+          {
+            id: 'q3_4', type: 'checkbox', required: true, label: '你认为下列哪些情况更适合判定为"能做但麻烦"而不是"做不了"？',
+            options: ['可以做，但要人工介入很多', '可以做，但效率太低', '可以做，但要改客户工艺', '可以做，但只适合少量场景', '可以做，但一致性难保证', '可以做，但对食材要求极高', '可以做，但只能达到 80~90 分', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q3_5', type: 'radio', required: true, label: '你认为客户是否普遍接受为了适配机器而改工艺？',
+            options: ['普遍接受', '比较接受', '一半接受一半不接受', '大多不接受', '基本不接受'],
+            hasOther: false
+          },
+          {
+            id: 'q3_6', type: 'radio', required: true, label: '如果客户不接受改工艺，你通常会怎么处理？',
+            options: ['继续硬调，尽量贴近', '建议改菜或下架', '建议增加人工步骤', '建议先做前处理', '先做低要求版本', '视客户重要性决定', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q3_7', type: 'checkbox', required: true, label: '你觉得以下哪类菜用机器制作最容易效果不理想？',
+            options: ['强爆炒类', '先走油后回锅类', '高精度勾芡类', '高锅气粤菜类', '低油先炒蛋白类', '炒粉炒面类', '海鲜快炒类', '特殊烟熏香型类', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q3_8', type: 'radio', required: true, label: '你在现场会不会主动告诉客户这道菜机器能不能做？',
+            options: ['基本都会', '大多数会', '看情况', '很少会', '基本不会'],
+            hasOther: false
+          },
+          {
+            id: 'q3_9', type: 'radio', required: true, label: '你觉得系统未来是否有必要在录菜前先给出"能不能做"的建议？',
+            options: ['非常有必要', '有必要', '一般', '不太有必要', '没必要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm04',
+        title: '目标出品理解',
+        desc: '了解如何理解客户说的"做对了"',
+        questions: [
+          {
+            id: 'q4_1', type: 'checkbox', required: true, label: '客户最常关注的出品维度有哪些？',
+            options: ['味道', '香气', '锅气', '外观颜色', '亮泽度', '挂汁状态', '肉的嫩度', '蔬菜断生程度', '油汁融合度', '汤汁多少', '盘面观感', '一致性', '出餐速度', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q4_2', type: 'radio', required: true, label: '你自己在判断一道菜接近客户要求时，最先看的通常是什么？',
+            options: ['味道', '香气', '外观', '锅气', '汤汁状态', '肉/菜熟度', '综合判断'],
+            hasOther: false
+          },
+          {
+            id: 'q4_3', type: 'checkbox', required: true, label: '你觉得以下哪些描述最难标准化？',
+            options: ['锅气', '爆香', '嫩', '刚断生', '挂汁', '亮', '油汁融合', '烟熏味', '香味出来了', '颜色到位', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q4_4', type: 'radio', required: true, label: '你是否认同：同一句"嫩一点"，不同客户理解不完全一样？',
+            options: ['非常认同', '比较认同', '一般', '不太认同', '不认同'],
+            hasOther: false
+          },
+          {
+            id: 'q4_5', type: 'checkbox', required: true, label: '对你来说，下列哪些目标最依赖经验而不是明确克数/参数？',
+            options: ['锅气', '香气', '爆香程度', '颜色', '亮泽', '断生', '肉嫩', '汤汁状态', '挂汁状态', '油汁融合', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q4_6', type: 'radio', required: true, 
+            label: '你觉得未来系统有没有必要把"厨师语言"（如"爆香、嫩、刚断生、挂汁"等）做成统一词典？',
+            options: ['非常有必要', '有必要', '一般', '不太有必要', '没必要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm05',
+        title: '首版录菜经验',
+        desc: '了解第一次上机通常能达到的水平',
+        questions: [
+          {
+            id: 'q5_1', type: 'radio', required: true, label: '对熟悉类型的菜，你第一次录出来大概能达到客户要求的多少？',
+            options: ['60% 以下', '60%~70%', '70%~80%', '80%~90%', '90% 以上', '视客户标准差异很大'],
+            hasOther: false
+          },
+          {
+            id: 'q5_2', type: 'checkbox', required: true, label: '影响首版成功率最大的因素有哪些？',
+            options: ['我对设备够不够熟', '我对菜系够不够熟', '客户表达是否清楚', '客户样菜是否标准', '食材状态是否稳定', '客户是否允许改工艺', '客户要求是否特别高', '是否有类似菜经验', '是否有现成菜谱可参考', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q5_3', type: 'checkbox', required: true, label: '你形成首版方案时，最主要依赖什么？',
+            options: ['观察人工炒制顺序', '经验直觉', '过往相似菜经验', '客户 SOP', '现有菜谱库', '食材比例判断', '设备限制经验', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q5_4', type: 'radio', required: true, label: '你平时是否会直接从已有菜谱库找相似菜复用？',
+            options: ['经常复用', '有时复用', '很少复用', '基本不复用'],
+            hasOther: false
+          },
+          {
+            id: 'q5_5', type: 'checkbox', required: true, label: '如果较少复用，主要原因是什么？',
+            options: ['相似菜不容易找到', '菜谱库不好检索', '配方差异太大', '食材比例差异太大', '工艺差异太大', '客户要求差异太大', '直接重录更快', '不信任旧菜谱适配度', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q5_6', type: 'radio', required: true, 
+            label: '你觉得未来系统是否应该具备"相似菜推荐 + 可复用程度提示"能力？（系统根据你录入的菜品，自动推荐菜谱库中相似的菜，并提示可复用程度）',
+            options: ['非常需要', '需要', '一般', '不太需要', '不需要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm06',
+        title: '关键影响变量',
+        desc: '了解最影响出品的变量是什么',
+        questions: [
+          {
+            id: 'q6_1', type: 'checkbox', required: true, label: '影响最终出品最大的因素有哪些？',
+            options: ['食材质量', '食材新鲜度', '食材冷冻/冷藏状态', '切配大小', '腌制方法', '火力', '时间', '投料顺序', '投料时机', '投料精度', '投料位置', '锅转/搅拌速度', '水淀粉浓度', '人工介入方式', '客户原始标准', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q6_2', type: 'radio', required: true, label: '你认为食材状态对出品影响程度如何？',
+            options: ['极大', '很大', '中等', '较小', '很小'],
+            hasOther: false
+          },
+          {
+            id: 'q6_3', type: 'checkbox', required: true, label: '哪些食材状态最容易导致"程序没变，但出品变了"？',
+            options: ['肉是否冷冻', '肉解冻程度', '蔬菜含水量', '辣椒品种差异', '切配厚薄不一', '腌制不一致', '调味料浓度变化', '水淀粉比例变化', '原料批次差异', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q6_4', type: 'radio', required: true, label: '你觉得客户是否普遍低估了食材波动对机器出品的影响？',
+            options: ['普遍低估', '比较低估', '一般', '不太低估', '不低估'],
+            hasOther: false
+          },
+          {
+            id: 'q6_5', type: 'checkbox', required: true, label: '现场出现"今天和昨天出品不一样"时，你首先怀疑什么？',
+            options: ['食材变了', '程序参数变了', '门店执行变了', '水淀粉调法变了', '投料不准', '食材切配变了', '锅状态变了', '客户主观感觉变了', '其他'],
+            hasOther: true
+          }
+        ]
+      },
+      {
+        id: 'm07',
+        title: '温度 / 火力 / 锅气',
+        desc: '关于火力与锅气的经验判断',
+        questions: [
+          {
+            id: 'q7_1', type: 'radio', required: true, label: '你觉得"锅气"在客户验收中的重要程度如何？',
+            options: ['极高', '很高', '中等', '较低', '很低'],
+            hasOther: false
+          },
+          {
+            id: 'q7_2', type: 'checkbox', required: true, label: '哪些区域/国家客户更在意锅气？',
+            options: ['中国大陆', '韩国', '日本', '东南亚', '美国', '港澳台', '不同区域差别不大', '不确定'],
+            hasOther: false
+          },
+          {
+            id: 'q7_3', type: 'checkbox', required: true, label: '你认为锅气最主要来自哪些因素？',
+            options: ['高温', '出锅前拉高功率', '食材状态', '锅内水分控制', '投料顺序', '搅拌方式', '锅边激香', '香料爆香', '人工介入', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q7_4', type: 'radio', required: true, label: '你平时会不会专门为"锅气"去调整程序？',
+            options: ['经常会', '有时会', '很少会', '基本不会'],
+            hasOther: false
+          },
+          {
+            id: 'q7_5', type: 'checkbox', required: true, label: '你觉得下列哪些类型的菜更容易因为锅气问题导致不过关？',
+            options: ['小炒类', '干炒类', '牛肉类', '粤式快炒类', '炒饭类', '韩式辣炒类', '炒粉炒面类', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q7_6', type: 'checkbox', required: true, label: '如果客户觉得锅气不够，你最常先调什么？',
+            options: ['提高后段功率', '调整投料顺序', '减少前段出水', '调整搅拌速度', '调整液料时机', '增加锅边激香动作', '建议改工艺', '建议人工补操作', '其他'],
+            hasOther: true
+          }
+        ]
+      },
+      {
+        id: 'm08',
+        title: '投料与调味经验',
+        desc: '调味料 / 液料 / 干料的控制经验',
+        questions: [
+          {
+            id: 'q8_1', type: 'checkbox', required: true, label: '哪些调味料对出品最敏感？',
+            options: ['盐', '老抽', '生抽', '蚝油', '料酒/花雕酒', '糖浆', '辣椒面', '小米辣', '醋', '水淀粉', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q8_2', type: 'checkbox', required: true, label: '你觉得当前最容易因精度问题影响出品的是？',
+            options: ['老抽上色', '小剂量盐', '小剂量糖', '小剂量醋', '小剂量高浓度水淀粉', '特殊香料液体', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q8_3', type: 'checkbox', required: true, label: '哪些液料最需要"投放位置正确"？',
+            options: ['酱油类', '醋类', '料酒/花雕酒', '老抽', '蚝油', '水淀粉', '糖浆', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q8_4', type: 'checkbox', required: true, label: '哪些调味料更适合投锅边？',
+            options: ['酱油类', '醋类', '料酒/花雕酒', '糖浆', '老抽', '蚝油', '水淀粉', '以上都不适合', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q8_5', type: 'checkbox', required: true, label: '哪些调味料更适合直接投到食材上？',
+            options: ['老抽', '蚝油', '水淀粉', '盐', '鸡精/味精', '酱油', '糖浆', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q8_6', type: 'radio', required: true, label: '你觉得"投料时机"在客户高标准验收里重要吗？',
+            options: ['非常重要', '重要', '一般', '不太重要', '不重要'],
+            hasOther: false
+          },
+          {
+            id: 'q8_7', type: 'checkbox', required: true, label: '你最常遇到的投料相关问题有哪些？',
+            options: ['量不准', '位置不对', '时机不对', '速度太慢', '混匀不充分', '激香不够', '上色不稳定', '勾芡不稳定', '客户要求变化', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q8_8', type: 'radio', required: true, label: '你觉得系统未来是否有必要把"调味料类型 × 投法要求 × 敏感度"做成知识库？',
+            options: ['非常有必要', '有必要', '一般', '不太有必要', '没必要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm09',
+        title: '水淀粉 / 勾芡专题',
+        desc: '关于水淀粉的经验',
+        questions: [
+          {
+            id: 'q9_1', type: 'radio', required: true, label: '你觉得水淀粉对出品的敏感程度如何？',
+            options: ['非常敏感', '比较敏感', '一般', '不太敏感', '很不敏感'],
+            hasOther: false
+          },
+          {
+            id: 'q9_2', type: 'checkbox', required: true, label: '哪些情况最容易让水淀粉出问题？',
+            options: ['浓度过高', '浓度过低', '投料量太少', '投料量太多', '锅温太高', '菜量太小', '投放太快', '没先加水降温', '门店调配不稳定', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q9_3', type: 'radio', required: true, label: '你是否经常会通过"先投水再投水淀粉"的方式规避问题？',
+            options: ['经常', '有时', '很少', '基本不会'],
+            hasOther: false
+          },
+          {
+            id: 'q9_4', type: 'checkbox', required: true, label: '哪些菜对水淀粉要求更高？',
+            options: ['粤式亮芡蔬菜类', '小份炒菜类', '高亮泽挂汁类', '汤汁浓缩类', '炒面盖浇类', '需要少量精细勾芡的菜', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q9_5', type: 'checkbox', required: true, label: '当前水淀粉相关问题最主要出在什么环节？',
+            options: ['调配比例不稳', '机器投量不稳', '锅温不合适', '菜量变化', '搅拌不够', '客户要求太细', '门店执行不一致', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q9_6', type: 'radio', required: true, label: '你觉得水淀粉是否需要在系统里单独作为专题知识来管理？',
+            options: ['非常需要', '需要', '一般', '不太需要', '不需要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm10',
+        title: '搅拌 / 锅转 / 人工介入',
+        desc: '关于搅拌方式的经验',
+        questions: [
+          {
+            id: 'q10_1', type: 'checkbox', required: true, label: '你觉得搅拌/锅转主要影响哪些结果？',
+            options: ['受热均匀', '爆香效果', '食材断生程度', '挂汁效果', '粘锅风险', '调料混匀', '锅气表现', '外观完整性', '出锅速度', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q10_2', type: 'checkbox', required: true, label: '哪类食材/菜品更容易因搅拌方式不合适而出问题？',
+            options: ['蒜蓉爆香类', '辣椒类', '肉丝类', '勾芡类', '小份菜', '炒饭类', '炒粉面类', '高淀粉类', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q10_3', type: 'radio', required: true, label: '你是否经常会根据不同阶段切换不同锅转/搅拌速度？',
+            options: ['经常会', '有时会', '很少会', '基本不会'],
+            hasOther: false
+          },
+          {
+            id: 'q10_4', type: 'checkbox', required: true, label: '在什么情况下你会倾向于人工介入？',
+            options: ['粘锅风险高', '需要快速把调味翻匀', '需要快速把上色调味料翻匀', '锅气要求高', '现有搅拌结构不适配', '小炒牛肉/辣椒炒肉等高要求菜', '客户要求传统手法效果', '临时补救', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q10_5', type: 'checkbox', required: true, label: '你认为当前哪些菜最依赖人工介入？',
+            options: ['高要求小炒类', '粘锅风险高的肉类', '高锅气菜', '传统工艺强依赖的菜', '快速翻炒类', '高精细勾芡类', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q10_6', type: 'radio', required: true, label: '你觉得系统未来是否有必要明确标记"该菜是否需要人工介入"？',
+            options: ['非常有必要', '有必要', '一般', '不太有必要', '没必要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm11',
+        title: '客户验收与调优过程',
+        desc: '关于试菜、调优和验收',
+        questions: [
+          {
+            id: 'q11_1', type: 'radio', required: true, label: '你通常需要几次才能让客户通过一道人气菜/重点菜？',
+            options: ['1 次', '2~3 次', '4~5 次', '5 次以上', '差异很大，没法统一'],
+            hasOther: false
+          },
+          {
+            id: 'q11_2', type: 'checkbox', required: true, label: '影响调试周期长短的最大因素有哪些？',
+            options: ['客户要求高', '客户验收人多', '不同人意见不一致', '食材状态不稳定', '设备能力有限', '菜品本身难度高', '区域化口味调整', '客户临时变更标准', '现场时间有限', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q11_3', type: 'radio', required: true, label: '客户验收过程中，是否经常出现"前面的人通过了，后面更高层的人又提出新要求"？',
+            options: ['经常出现', '偶尔出现', '很少出现', '基本没有'],
+            hasOther: false
+          },
+          {
+            id: 'q11_4', type: 'checkbox', required: true, label: '客户反馈不过关时，最常见的原因有哪些？',
+            options: ['味道不对', '锅气不足', '香气不足', '颜色不对', '肉不够嫩', '辣椒/蔬菜火候不对', '汤汁状态不对', '出品不稳定', '与人工差距明显', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q11_5', type: 'radio', required: true, label: '当客户说"不对，但又说不清哪里不对"时，你通常如何处理？',
+            options: ['让客户再炒一版样菜', '一项项拆解问', '先从香气和锅气入手调', '先从调味量入手调', '先从顺序/火力入手调', '看经验判断', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q11_6', type: 'radio', required: true, label: '你是否会在现场记录"调了什么、为什么调、结果如何"？',
+            options: ['每次都会', '大多数会', '有时会', '很少会', '基本不会'],
+            hasOther: false
+          },
+          {
+            id: 'q11_7', type: 'radio', required: true, label: '你觉得这类调优记录未来是否值得系统化保存？',
+            options: ['非常值得', '值得', '一般', '不太值得', '不值得'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm12',
+        title: '区域化 / 客户差异',
+        desc: '同一道菜在不同客户或区域的变化',
+        questions: [
+          {
+            id: 'q12_1', type: 'radio', required: true, label: '你是否经常遇到"同一道菜，不同区域要改口味"的情况？',
+            options: ['经常遇到', '偶尔遇到', '很少遇到', '基本没有'],
+            hasOther: false
+          },
+          {
+            id: 'q12_2', type: 'checkbox', required: true, label: '区域差异最常体现在什么地方？',
+            options: ['辣度', '麻度', '咸度', '甜度', '锅气', '香气浓度', '酱香/豉香', '蚝油感', '小米辣用量', '颜色深浅', '汤汁多少', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q12_3', type: 'radio', required: true, label: '你是否遇到过"总部版本通过，但地方区域不接受"的情况？',
+            options: ['经常遇到', '偶尔遇到', '很少遇到', '基本没有'],
+            hasOther: false
+          },
+          {
+            id: 'q12_4', type: 'radio', required: true, label: '遇到这种情况时，通常怎么处理？',
+            options: ['直接重录区域版', '在总部版基础上微调', '先和总部确认再改', '按区域负责人要求先改', '不固定', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q12_5', type: 'radio', required: true, label: '你觉得未来系统是否需要管理"客户总部版/客户区域版/客户门店版"关系？',
+            options: ['非常需要', '需要', '一般', '不太需要', '不需要'],
+            hasOther: false
+          }
+        ]
+      },
+      {
+        id: 'm13',
+        title: '菜谱复用与知识沉淀',
+        desc: '你希望系统未来帮你什么',
+        questions: [
+          {
+            id: 'q13_1', type: 'checkbox', required: true, label: '如果未来有一个更智能的菜谱系统，你最希望它先帮你解决什么问题？',
+            options: ['快速找相似菜', '判断这道菜能不能做', '推荐首版参数', '可一键自动调节', '提醒食材要求', '记录调优过程', '管理客户版本', '管理区域差异', '汇总失败经验', '提供调味敏感度提示', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q13_2', type: 'checkbox', required: true, label: '你最希望系统能帮你复用哪些经验？',
+            options: ['相似菜工艺', '常见调味量范围', '可交付性结论', '粘锅规避方法', '锅气实现经验', '水淀粉经验', '客户标准案例', '区域改版经验', '失败案例', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q13_3', type: 'checkbox', required: true, label: '你觉得当前最难沉淀下来的经验是什么？',
+            options: ['感觉类判断', '口味描述', '锅气经验', '现场临时调法', '客户口头标准', '调试中的小技巧', '食材波动补偿经验', '区域差异判断', '其他'],
+            hasOther: true
+          },
+          {
+            id: 'q13_4', type: 'checkbox', required: true, label: '你觉得未来系统（指菜谱系统）最不应该遗漏的信息是什么？',
+            options: ['客户验收重点', '可交付性结论', '食材前提', '高敏调味料', '关键工艺顺序', '人工介入点', '失败原因', '版本变更记录', '区域口味要求', '其他'],
+            hasOther: true
+          }
+        ]
+      },
+      {
+        id: 'm14',
+        title: '关键案例补充',
+        desc: '请补充你的典型案例（少量简答）',
+        questions: [
+          { id: 'q14_1', type: 'text', required: true, label: '你印象最深的一道"特别难录"的菜是什么？' },
+          {
+            id: 'q14_2', type: 'checkbox', required: true, label: '难点主要体现在哪些方面？',
+            options: ['客户要求高', '锅气难达成', '粘锅', '上色难', '勾芡难', '食材波动大', '多角色验收', '区域差异', '设备能力不够', '工艺不兼容', '其他'],
+            hasOther: true
+          },
+          { id: 'q14_3', type: 'textarea', required: false, label: '最后是怎么解决的？' },
+          { id: 'q14_4', type: 'text', required: false, label: '你印象最深的一道"本来觉得难，但后来找到窍门"的菜是什么？' },
+          { id: 'q14_5', type: 'text', required: false, label: '你印象最深的一道"建议不做或很难做"的菜是什么？' },
+          { id: 'q14_6', type: 'textarea', required: false, label: '原因是什么？' }
+        ]
+      }
+    ];
+
+// ==================== 状态管理 ====================
+    let answers = {};
+    let moduleStatus = {};
+
+    // ==================== 初始化 ====================
+    function init() {
+      renderNav();
+      renderContent();
+      loadData();
+      updateProgress();
+      setupScrollSpy();
+      setupHeaderScroll();
+    }
+
+    // ==================== 渲染导航 ====================
+    function renderNav() {
+      const navList = document.getElementById('navList');
+      navList.innerHTML = surveyData.map((module, index) => `
+        <li class="nav-item">
+          <a class="nav-link" href="#${module.id}" onclick="scrollToModule('${module.id}')">
+            <span class="nav-status pending" id="status-${module.id}"></span>
+            <span class="nav-number">${index + 1}</span>
+            <span>${module.title}</span>
+          </a>
+        </li>
+      `).join('');
+    }
+
+    // ==================== 渲染内容 ====================
+    function renderContent() {
+      const content = document.getElementById('content');
+      content.innerHTML = surveyData.map((module, mIndex) => `
+        <section class="module" id="${module.id}">
+          <div class="module-header">
+            <div class="module-number">${mIndex + 1}</div>
+            <div>
+              <div class="module-title">${module.title}</div>
+              <div class="module-desc">${module.desc}</div>
+            </div>
+          </div>
+          ${module.questions.map((q, qIndex) => renderQuestion(q, mIndex + 1, qIndex + 1)).join('')}
+        </section>
+      `).join('');
+    }
+
+    // ==================== 渲染题目 ====================
+    function renderQuestion(question, moduleNum, questionNum) {
+      const required = question.required ? '<span class="required-mark">*</span>' : '';
+      const qNum = `M${moduleNum}-${questionNum}`;
+
+      let inputHtml = '';
+
+      if (question.type === 'text') {
+        inputHtml = `<input type="text" class="input-text" 
+          oninput="saveAnswerWithDebounce('${question.id}', this.value)"
+          value="${answers[question.id] || ''}">`;
+      } else if (question.type === 'textarea') {
+        inputHtml = `<textarea class="input-text" style="min-height:100px;resize:vertical;"
+          oninput="saveAnswerWithDebounce('${question.id}', this.value)">${answers[question.id] || ''}</textarea>`;
+      } else if (question.type === 'radio') {
+        const hasOther = question.hasOther === true;
+        const otherValue = answers[question.id + '_other'] || '';
+        const isOtherSelected = answers[question.id] === '其他';
+        inputHtml = `<div class="options">
+          ${question.options.map(opt => {
+            const checked = answers[question.id] === opt ? 'checked' : '';
+            return `
+              <label class="option ${checked ? 'selected' : ''}">
+                <input type="radio" name="${question.id}" value="${opt}" ${checked}
+                  onchange="saveAnswer('${question.id}', this.value)">
+                <span class="option-label">${opt}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>`;
+        if (hasOther) {
+          inputHtml += `
+            <div class="other-input-container ${isOtherSelected ? 'visible' : ''}" id="other-container-${question.id}">
+              <div class="other-input-label">请补充具体内容<span class="other-input-required">*</span></div>
+              <input type="text" class="input-text" 
+                placeholder="请输入其他选项的具体内容"
+                oninput="saveAnswerWithDebounce('${question.id}_other', this.value)"
+                value="${otherValue}">
+            </div>
+          `;
+        }
+      } else if (question.type === 'checkbox') {
+        const values = answers[question.id] || [];
+        const hasOther = question.hasOther === true;
+        const otherValue = answers[question.id + '_other'] || '';
+        const isOtherSelected = values.includes('其他');
+        inputHtml = `<div class="options">
+          ${question.options.map(opt => {
+            const checked = values.includes(opt) ? 'checked' : '';
+            return `
+              <label class="option ${checked ? 'selected' : ''}">
+                <input type="checkbox" name="${question.id}" value="${opt}" ${checked}
+                  onchange="saveAnswerCheckbox('${question.id}', this)">
+                <span class="option-label">${opt}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>`;
+        if (hasOther) {
+          inputHtml += `
+            <div class="other-input-container ${isOtherSelected ? 'visible' : ''}" id="other-container-${question.id}">
+              <div class="other-input-label">请补充具体内容<span class="other-input-required">*</span></div>
+              <input type="text" class="input-text" 
+                placeholder="请输入其他选项的具体内容"
+                oninput="saveAnswerWithDebounce('${question.id}_other', this.value)"
+                value="${otherValue}">
+            </div>
+          `;
+        }
+      } else if (question.type === 'likert') {
+        inputHtml = `<div class="likert-scale">
+          ${question.scale.map((label, i) => {
+            const value = i + 1;
+            const selected = answers[question.id] == value ? 'selected' : '';
+            return `<button class="likert-button ${selected}" 
+              onclick="saveLikertAnswer('${question.id}', ${value}, this)">${label}</button>`;
+          }).join('')}
+        </div>`;
+      }
+
+      return `
+        <div class="question" id="q-${question.id}">
+          <div class="question-label">
+            <span class="question-number">${qNum}</span>
+            <span class="question-text">${question.label}${required}</span>
+          </div>
+          ${inputHtml}
+        </div>
+      `;
+    }
+    // ==================== 保存答案 ====================
+    function saveAnswer(questionId, value) {
+      answers[questionId] = value;
+      
+      // 处理其他选项的显示/隐藏（radio）
+      const otherContainer = document.getElementById('other-container-' + questionId);
+      if (otherContainer) {
+        if (value === '其他') {
+          otherContainer.classList.add('visible');
+        } else {
+          otherContainer.classList.remove('visible');
+        }
+      }
+      
+      updateModuleStatus(questionId);
+      updateProgress();
+      autoSave();
+    }
+
+    function saveAnswerWithDebounce(questionId, value) {
+      // 文本输入防抖保存（500ms）
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        answers[questionId] = value;
+        updateModuleStatus(questionId);
+        updateProgress();
+        autoSave();
+      }, 500);
+    }
+
+    function saveAnswerCheckbox(questionId, checkbox) {
+      const name = checkbox.name;
+      const value = checkbox.value;
+      const checked = checkbox.checked;
+
+      if (!answers[name]) {
+        answers[name] = [];
+      }
+
+      if (checked) {
+        if (!answers[name].includes(value)) {
+          answers[name].push(value);
+        }
+      } else {
+        answers[name] = answers[name].filter(v => v !== value);
+      }
+
+      // 更新样式
+      const options = checkbox.closest('.options').querySelectorAll('.option');
+      options.forEach(opt => {
+        const input = opt.querySelector('input');
+        if (input.checked) {
+          opt.classList.add('selected');
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
+
+      // 处理其他选项的显示/隐藏
+      const otherContainer = document.getElementById('other-container-' + name);
+      if (otherContainer) {
+        if (answers[name].includes('其他')) {
+          otherContainer.classList.add('visible');
+        } else {
+          otherContainer.classList.remove('visible');
+        }
+      }
+
+      updateModuleStatus(name);
+      updateProgress();
+      autoSave();
+    }
+
+    function saveLikertAnswer(questionId, value, button) {
+      answers[questionId] = value;
+
+      // 更新样式
+      const buttons = button.parentElement.querySelectorAll('.likert-button');
+      buttons.forEach((btn, i) => {
+        if (i + 1 === value) {
+          btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      });
+
+      updateModuleStatus(questionId);
+      updateProgress();
+      autoSave();
+    }
+
+    // ==================== 更新模块状态 ====================
+    function updateModuleStatus(questionId) {
+      const module = surveyData.find(m => m.questions.some(q => q.id === questionId));
+      if (!module) return;
+
+      const answeredCount = module.questions.filter(q => {
+        const ans = answers[q.id];
+        if (q.type === 'checkbox') {
+          return ans && ans.length > 0;
+        }
+        return ans !== undefined && ans !== '';
+      }).length;
+
+      const totalRequired = module.questions.filter(q => q.required).length;
+      const answeredRequired = module.questions.filter(q => {
+        if (!q.required) return false;
+        const ans = answers[q.id];
+        if (q.type === 'checkbox') {
+          return ans && ans.length > 0;
+        }
+        return ans !== undefined && ans !== '';
+      }).length;
+
+      const statusEl = document.getElementById(`status-${module.id}`);
+      if (!statusEl) return;
+
+      statusEl.className = 'nav-status';
+      if (answeredRequired >= totalRequired && totalRequired > 0) {
+        statusEl.classList.add('completed');
+      } else if (answeredCount > 0) {
+        statusEl.classList.add('progress');
+      } else {
+        statusEl.classList.add('pending');
+      }
+    }
+
+    // ==================== 更新进度 ====================
+    function updateProgress() {
+      const totalRequired = surveyData.reduce((sum, m) => 
+        sum + m.questions.filter(q => q.required).length, 0);
+
+      const answeredRequired = surveyData.reduce((sum, m) => 
+        sum + m.questions.filter(q => {
+          if (!q.required) return false;
+          const ans = answers[q.id];
+          if (q.type === 'checkbox') {
+            return ans && ans.length > 0;
+          }
+          return ans !== undefined && ans !== '';
+        }).length, 0);
+
+      const percent = totalRequired > 0 ? Math.round((answeredRequired / totalRequired) * 100) : 0;
+
+      // 更新底部进度条
+      document.getElementById('progressFill').style.width = percent + '%';
+      document.getElementById('progressPercent').textContent = percent + '%';
+
+      // 更新顶部收缩后的进度条
+      const headerProgressFill = document.getElementById('headerProgressFill');
+      const headerProgressPercent = document.getElementById('headerProgressPercent');
+      if (headerProgressFill) {
+        headerProgressFill.style.width = percent + '%';
+      }
+      if (headerProgressPercent) {
+        headerProgressPercent.textContent = percent + '%';
+      }
+    }
+
+    // ==================== 滚动监听 ====================
+    function setupScrollSpy() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const moduleId = entry.target.id;
+            document.querySelectorAll('.nav-link').forEach(link => {
+              link.classList.remove('active');
+              if (link.getAttribute('href') === `#${moduleId}`) {
+                link.classList.add('active');
+              }
+            });
+          }
+        });
+      }, { threshold: 0.3, rootMargin: '-100px 0px -50% 0px' });
+
+      document.querySelectorAll('.module').forEach(module => {
+        observer.observe(module);
+      });
+    }
+
+    function scrollToModule(moduleId) {
+      const element = document.getElementById(moduleId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // ==================== 顶部说明区滚动收缩 ====================
+    function setupHeaderScroll() {
+      const header = document.querySelector('.header');
+      let ticking = false;
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const scrollY = window.scrollY;
+            
+            // 当滚动超过 80px 时收缩，否则恢复
+            if (scrollY > 80) {
+              header.classList.add('collapsed');
+            } else {
+              header.classList.remove('collapsed');
+            }
+            
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+    }
+
+    // ==================== 本地存储 ====================
+    let saveTimer = null;
+
+    function formatTime(date) {
+      const h = String(date.getHours()).padStart(2, '0');
+      const m = String(date.getMinutes()).padStart(2, '0');
+      const s = String(date.getSeconds()).padStart(2, '0');
+      return h + ':' + m + ':' + s;
+    }
+
+    function updateSaveStatus(isSaving) {
+      const now = new Date();
+      const timeStr = formatTime(now);
+      
+      // 更新顶部状态
+      const headerStatus = document.getElementById('headerSaveStatus');
+      const headerStatusText = document.getElementById('headerSaveStatusText');
+      if (headerStatus && headerStatusText) {
+        if (isSaving) {
+          headerStatus.className = 'auto-save-status saving';
+          headerStatusText.textContent = '保存中...';
+        } else {
+          headerStatus.className = 'auto-save-status saved';
+          headerStatusText.textContent = '已自动保存 ' + timeStr;
+        }
+      }
+      
+      // 更新底部状态
+      const footerStatus = document.getElementById('footerSaveStatus');
+      const footerStatusText = document.getElementById('footerSaveStatusText');
+      if (footerStatus && footerStatusText) {
+        if (isSaving) {
+          footerStatus.className = 'footer-save-status saving';
+          footerStatusText.textContent = '保存中...';
+        } else {
+          footerStatus.className = 'footer-save-status saved';
+          footerStatusText.textContent = '已自动保存 ' + timeStr;
+        }
+      }
+    }
+
+    function autoSave() {
+      updateSaveStatus(true);
+      localStorage.setItem('survey-collect-answers', JSON.stringify(answers));
+      localStorage.setItem('survey-collect-timestamp', new Date().toISOString());
+      // 短暂延迟后更新为已保存状态，让用户感知到保存动作
+      setTimeout(() => {
+        updateSaveStatus(false);
+      }, 300);
+    }
+
+    function saveDataManual() {
+      // 手动保存备份（辅助安心用）
+      localStorage.setItem('survey-collect-answers', JSON.stringify(answers));
+      localStorage.setItem('survey-collect-timestamp', new Date().toISOString());
+      updateSaveStatus(false);
+      // 短暂高亮提示
+      const headerStatus = document.getElementById('headerSaveStatus');
+      if (headerStatus) {
+        headerStatus.style.opacity = '0.5';
+        setTimeout(() => {
+          headerStatus.style.opacity = '1';
+        }, 200);
+      }
+      showToast('备份已保存', 'success');
+    }
+
+    function saveData() {
+      // 兼容旧调用，实际使用 saveDataManual
+      saveDataManual();
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem('survey-collect-answers');
+      if (saved) {
+        try {
+          answers = JSON.parse(saved);
+          // 恢复答案到界面
+          Object.keys(answers).forEach(questionId => {
+            // 跳过 _other 后缀的字段，这些会在恢复主字段时处理
+            if (questionId.endsWith('_other')) return;
+            
+            const value = answers[questionId];
+            const question = surveyData.flatMap(m => m.questions).find(q => q.id === questionId);
+            if (!question) return;
+
+            if (question.type === 'checkbox') {
+              const inputs = document.querySelectorAll(`input[name="${questionId}"]`);
+              inputs.forEach(input => {
+                if (value.includes(input.value)) {
+                  input.checked = true;
+                  input.parentElement.classList.add('selected');
+                }
+              });
+              // 恢复其他选项输入框
+              const otherContainer = document.getElementById('other-container-' + questionId);
+              if (otherContainer && value.includes('其他')) {
+                otherContainer.classList.add('visible');
+                const otherInput = otherContainer.querySelector('input');
+                if (otherInput && answers[questionId + '_other']) {
+                  otherInput.value = answers[questionId + '_other'];
+                }
+              }
+            } else if (question.type === 'radio') {
+              const input = document.querySelector(`input[name="${questionId}"][value="${value}"]`);
+              if (input) {
+                input.checked = true;
+                input.parentElement.classList.add('selected');
+              }
+              // 恢复其他选项输入框
+              const otherContainer = document.getElementById('other-container-' + questionId);
+              if (otherContainer && value === '其他') {
+                otherContainer.classList.add('visible');
+                const otherInput = otherContainer.querySelector('input');
+                if (otherInput && answers[questionId + '_other']) {
+                  otherInput.value = answers[questionId + '_other'];
+                }
+              }
+            } else if (question.type === 'likert') {
+              const buttons = document.querySelectorAll(`#${questionId} .likert-button`);
+              buttons.forEach((btn, i) => {
+                if (i + 1 === value) {
+                  btn.classList.add('selected');
+                }
+              });
+            } else if (question.type === 'text') {
+              const input = document.querySelector(`input[oninput*="${questionId}"]`);
+              if (input) {
+                input.value = value;
+              }
+            } else if (question.type === 'textarea') {
+              const textarea = document.querySelector(`textarea[oninput*="${questionId}"]`);
+              if (textarea) {
+                textarea.value = value;
+              }
+            }
+
+            updateModuleStatus(questionId);
+          });
+        } catch (e) {
+          console.error('加载保存数据失败:', e);
+        }
+      }
+    }    // ==================== 导出 ====================
+    function exportData() {
+      const name = answers['q1_1'] || '未命名';
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+      const exportData = {
+        surveyVersion: 'survey-collect-v1.1',
+        exportTime: new Date().toISOString(),
+        respondent: {
+          name: answers['q1_1'] || '',
+          position: answers['q1_2'] || '',
+          experience: answers['q1_3'] || ''
+        },
+        answers: answers
+      };
+
+      const json = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `taste-survey-${name}-${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('导出成功', 'success');
+    }
+
+    // ==================== 完成填写并导出 ====================
+    function validateAndComplete() {
+      const missingRequired = [];
+      const missingOther = [];
+
+      surveyData.forEach(module => {
+        module.questions.forEach(q => {
+          if (!q.required) return;
+          const ans = answers[q.id];
+          if (q.type === 'checkbox') {
+            if (!ans || ans.length === 0) {
+              missingRequired.push(`${module.title}: ${q.label}`);
+            } else if (q.hasOther && ans.includes('其他')) {
+              // 检查其他选项是否有补充内容
+              const otherValue = answers[q.id + '_other'];
+              if (!otherValue || otherValue.trim() === '') {
+                missingOther.push(`${module.title}: ${q.label} 的"其他"选项需要补充具体内容`);
+              }
+            }
+          } else if (q.type === 'radio') {
+            if (!ans || ans === '') {
+              missingRequired.push(`${module.title}: ${q.label}`);
+            } else if (q.hasOther && ans === '其他') {
+              // 检查其他选项是否有补充内容
+              const otherValue = answers[q.id + '_other'];
+              if (!otherValue || otherValue.trim() === '') {
+                missingOther.push(`${module.title}: ${q.label} 的"其他"选项需要补充具体内容`);
+              }
+            }
+          } else if (!ans || ans === '') {
+            missingRequired.push(`${module.title}: ${q.label}`);
+          }
+        });
+      });
+
+      if (missingOther.length > 0) {
+        showToast(missingOther[0], 'error');
+        return;
+      }
+
+      if (missingRequired.length > 0) {
+        showToast(`还有 ${missingRequired.length} 个必填项未完成`, 'error');
+        // 滚动到第一个未完成的模块
+        const firstMissingModule = surveyData.find(m => 
+          m.questions.some(q => {
+            if (!q.required) return false;
+            const ans = answers[q.id];
+            if (q.type === 'checkbox') {
+              return !ans || ans.length === 0;
+            }
+            return !ans || ans === '';
+          })
+        );
+        if (firstMissingModule) {
+          scrollToModule(firstMissingModule.id);
+        }
+        return;
+      }
+
+      // 校验通过，直接导出
+      exportDataWithComplete();
+    }    function exportDataWithComplete() {
+      // 先保存一次
+      autoSave();
+      
+      // 执行导出
+      const name = answers['q1_1'] || '未命名';
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+      const exportObj = {
+        surveyVersion: 'survey-collect-v1.2',
+        exportTime: new Date().toISOString(),
+        respondent: {
+          name: answers['q1_1'] || '',
+          position: answers['q1_2'] || '',
+          experienceYears: answers['q1_3a'] || '',
+          companyYears: answers['q1_3b'] || ''
+        },
+        answers: answers
+      };
+
+      const json = JSON.stringify(exportObj, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `taste-survey-${name}-${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // 导出完成后提示
+      showToast('✓ 文件已导出！请将文件发送给指定负责人', 'success');
+    }    // ==================== 提示框 ====================
+    function showToast(message, type = '') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type + ' show';
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // ==================== 启动 ====================
+    init();
+  </script>
+</body>
+</html>
