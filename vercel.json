@@ -8,6 +8,8 @@
     { "source": "/v1.2", "destination": "/index-survey-collect-v1.2.html" },
     { "source": "/v1.2/", "destination": "/index-survey-collect-v1.2.html" },
     { "source": "/v1.2.1", "destination": "/index-survey-collect-v1.2.1.html" },
-    { "source": "/v1.2.1/", "destination": "/index-survey-collect-v1.2.1.html" }
+    { "source": "/v1.2.1/", "destination": "/index-survey-collect-v1.2.1.html" },
+    { "source": "/v1.2.2", "destination": "/index-survey-collect-v1.2.2.html" },
+    { "source": "/v1.2.2/", "destination": "/index-survey-collect-v1.2.2.html" }
   ]
 }
